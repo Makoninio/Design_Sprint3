@@ -1,0 +1,45 @@
+<html>
+  <head>
+    <script src="https://aframe.io/releases/0.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <a-assets>
+        <img id="skyTexture1" src="scene1.png">
+        <img id="skyTexture2" src="scene2.png">
+        <img id="skyTexture3" src="scene3.png">
+        <img id="skyTexture4" src="scene4.png">
+        <img id="skyTexture5" src="scene5.jpg">
+      </a-assets>
+
+      <a-sky id="sky" src="#skyTexture1"></a-sky>
+    </a-scene>
+
+    <script>
+      const textures = [
+        '#skyTexture1',
+        '#skyTexture2',
+        '#skyTexture3',
+        '#skyTexture4',
+        '#skyTexture5'
+      ];
+
+      const durations = [
+        5000, // scene 1 duration (3 seconds)
+        5000, // scene 2 duration (7 seconds)
+        4000, // scene 3 duration (5 seconds)
+        1000, // scene 4 duration (10 seconds)
+        4000  // scene 5 duration (4 seconds)
+      ];
+
+      let totalDelay = 0;
+
+      textures.forEach((texture, index) => {
+        setTimeout(() => {
+          document.querySelector('#sky').setAttribute('src', texture);
+        }, totalDelay);
+        totalDelay += durations[index];
+      });
+    </script>
+  </body>
+</html>
