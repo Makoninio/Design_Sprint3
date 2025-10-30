@@ -10,9 +10,28 @@
         <img id="skyTexture3" src="scene3.png">
         <img id="skyTexture4" src="scene4.png">
         <img id="skyTexture5" src="scene5.jpg">
+
+        <!-- 3D assets and textures -->
+        <a-asset-item id="mutantObj" src="assets/Mutant.obj"></a-asset-item>
+        <!-- Choose one base color texture to apply to the whole mesh -->
+        <img id="mutantBaseTex" src="assets/Mutant_Textures/Texture_set_01/body_Base_Color.png">
       </a-assets>
 
       <a-sky id="sky" src="#skyTexture1"></a-sky>
+
+      <!-- Simple lighting so the model is visible -->
+      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
+      <a-entity light="type: directional; intensity: 0.9" position="1 2 1"></a-entity>
+
+      <!-- Mutant OBJ model placed in front of the camera -->
+      <a-entity
+        id="mutant"
+        obj-model="obj: #mutantObj"
+        position="0 0 -3"
+        rotation="0 0 0"
+        scale="0.01 0.01 0.01"
+        material="src: #mutantBaseTex; roughness: 1; metalness: 0">
+      </a-entity>
     </a-scene>
 
     <script>
