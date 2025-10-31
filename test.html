@@ -1,64 +1,211 @@
+<!DOCTYPE html>
 <html>
   <head>
-    <script src="https://aframe.io/releases/0.5.0/aframe.min.js"></script>
+    <title>Haunted Forest Experience</title>
+    <meta name="description" content="A-Frame horror environment">
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- Extras for physics, pathfinding, or model movement (optional) -->
+    <script src="https://cdn.rawgit.com/donmccurdy/aframe-extras/v4.1.2/dist/aframe-extras.min.js"></script>
   </head>
   <body>
-    <a-scene>
+    <a-scene fog="type: linear; color: #cfdfff; near: 1; far: 25" shadow="type: pcfsoft">
       <a-assets>
-        <img id="skyTexture1" src="scene1.png">
-        <img id="skyTexture2" src="scene2.png">
-        <img id="skyTexture3" src="scene3.png">
-        <img id="skyTexture4" src="scene4.png">
-        <img id="skyTexture5" src="scene5.jpg">
-
-        <!-- 3D assets and textures -->
+        <!-- Forest / mutant -->
         <a-asset-item id="mutantObj" src="assets/Mutant.obj"></a-asset-item>
-        <!-- Choose one base color texture to apply to the whole mesh -->
         <img id="mutantBaseTex" src="assets/Mutant_Textures/Texture_set_01/body_Base_Color.png">
+        <img id="groundTex" src="assets/Ground/ForestIvyGround01_ALBEDO_4K.png">
+        <img id="groundNormal" src="assets/Ground/ForestIvyGround01_NORMAL_4K.png">
+        <img id="groundRoughness" src="assets/Ground/ForestIvyGround01_ROUGH_4K.png">
+        <img id="groundMetallic" src="assets/Ground/ForestIvyGround01_METALLIC_4K.png">
+        <img id="groundAO" src="assets/Ground/ForestIvyGround01_AO_4K.png">
+
+        <!-- Tree model + texture -->
+        <a-asset-item id="treeObj" src="assets/Tree.obj"></a-asset-item>
+        <img id="barkTex" src="assets/Tree_Textures/BarkDecidious0143_5_S.jpg">
+
+        <!-- Ghost house models -->
+        <a-asset-item id="tombstones" src="Models/tombstones/scene.gltf"></a-asset-item>
+        <a-asset-item id="fireplace" src="Models/Fireplace.glb"></a-asset-item>
+        <a-asset-item id="pumpkin" src="Models/Scary_Pumpkins.glb"></a-asset-item>
+        <a-asset-item id="zombie" src="Models/zombie_1.glb"></a-asset-item>
+        <a-asset-item id="clown" src="Models/Scary_Face.glb"></a-asset-item>
+
+        <!-- Sound -->
+        <audio id="bgSound" src="assets/asylum_sound.mp3" preload="auto"></audio>
       </a-assets>
 
-      <a-sky id="sky" src="#skyTexture1"></a-sky>
+      <!-- Background sound -->
+      <a-sound src="#bgSound" autoplay="true" loop="true" volume="0.6" position="0 1.6 0"></a-sound>
 
-      <!-- Simple lighting so the model is visible -->
-      <a-entity light="type: ambient; intensity: 0.6"></a-entity>
-      <a-entity light="type: directional; intensity: 0.9" position="1 2 1"></a-entity>
+      <!-- Sky (changes over time) -->
+      <a-sky id="sky" color="#b3d9ff"></a-sky>
 
-      <!-- Mutant OBJ model placed in front of the camera -->
-      <a-entity
-        id="mutant"
-        obj-model="obj: #mutantObj"
-        position="0 0 -3"
-        rotation="0 0 0"
-        scale="0.01 0.01 0.01"
-        material="src: #mutantBaseTex; roughness: 1; metalness: 0">
+      <!-- Lighting -->
+      <a-entity id="sun" light="type: directional; color: #ffcc88; intensity: 1" position="2 4 1" shadow="cast: true"></a-entity>
+      <a-entity id="ambient" light="type: ambient; color: #ffffff; intensity: 0.6"></a-entity>
+
+      <!-- Ground (textured) -->
+      <a-plane rotation="-90 0 0" width="100" height="100"
+               material="src: #groundTex; normalMap: #groundNormal; roughnessMap: #groundRoughness; metalnessMap: #groundMetallic; ambientOcclusionMap: #groundAO; repeat: 12 12; roughness: 1; metalness: 0.2"
+               shadow="receive: true"></a-plane>
+
+      
+
+      <!-- Mutant -->
+      <a-entity id="mutant"
+                obj-model="obj: #mutantObj"
+                material="src: #mutantBaseTex"
+                position="0 0 -5"
+                rotation="0 0 0"
+                fit-to-height="1.8"
+                shadow="cast: true">
+      </a-entity>
+
+      <!-- House-like props from the ghost scene -->
+      <a-entity id="tombstones" gltf-model="#tombstones" position="5 0 8" fit-to-height="1.2"></a-entity>
+      <a-entity id="fireplace" gltf-model="#fireplace" position="3 0 -4" rotation="0 60 0" fit-to-height="1.2"></a-entity>
+      <a-entity id="pumpkin" gltf-model="#pumpkin" position="-2 0 -3" fit-to-height="0.5"></a-entity>
+      <a-entity id="clown" gltf-model="#clown" position="4 2 4" fit-to-height="1.5"></a-entity>
+      <a-entity id="zombie" gltf-model="#zombie" position="-4 0 -2" rotation="0 30 0" fit-to-height="1.8"></a-entity>
+
+      <!-- Camera / Player rig -->
+      <a-entity id="rig" position="0 1.6 0" wasd-controls>
+        <a-entity camera look-controls></a-entity>
       </a-entity>
     </a-scene>
 
     <script>
-      const textures = [
-        '#skyTexture1',
-        '#skyTexture2',
-        '#skyTexture3',
-        '#skyTexture4',
-        '#skyTexture5'
-      ];
-
-      const durations = [
-        5000, // scene 1 duration 
-        5000, // scene 2 duration
-        4000, // scene 3 duration
-        1000, // scene 4 duration
-        4000  // scene 5 duration
-      ];
-
-      let totalDelay = 0;
-
-      textures.forEach((texture, index) => {
-        setTimeout(() => {
-          document.querySelector('#sky').setAttribute('src', texture);
-        }, totalDelay);
-        totalDelay += durations[index];
+      // ---------- Fit-To-Height Component ----------
+      AFRAME.registerComponent('fit-to-height', {
+        schema: {type: 'number', default: 1}, // meters
+        init: function () {
+          this._apply = this._apply.bind(this);
+          this.el.addEventListener('model-loaded', this._apply);
+          // If mesh already present (some primitives), try immediately
+          if (this.el.getObject3D('mesh')) this._apply();
+        },
+        remove: function () {
+          this.el.removeEventListener('model-loaded', this._apply);
+        },
+        _apply: function () {
+          const mesh = this.el.getObject3D('mesh');
+          if (!mesh) return;
+          mesh.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(mesh);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const currentH = Math.max(size.y, 1e-3);
+          const targetH = this.data;
+          const k = targetH / currentH;
+          this.el.object3D.scale.set(k, k, k);
+        }
       });
+
+      // ---------- Leaf Colorizer Component ----------
+      // Finds likely leaf submeshes (by mesh/material name) and colors them.
+      AFRAME.registerComponent('leaf-color', {
+        schema: { color: {type: 'color', default: '#0a3a0a'} },
+        init: function () {
+          this._apply = this._apply.bind(this);
+          this.el.addEventListener('model-loaded', this._apply);
+          if (this.el.getObject3D('mesh')) this._apply();
+        },
+        remove: function () {
+          this.el.removeEventListener('model-loaded', this._apply);
+        },
+        _apply: function () {
+          const root = this.el.getObject3D('mesh');
+          if (!root) return;
+          const color = new THREE.Color(this.data.color || this.data);
+          root.traverse((o) => {
+            if (!o.isMesh) return;
+            const n = (o.name || '').toLowerCase();
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            let changed = false;
+            const replaced = mats.map((m) => {
+              const mname = (m && m.name || '').toLowerCase();
+              const isLeaf = n.includes('leaf') || n.includes('leaves') || n.includes('foliage') || mname.includes('leaf') || mname.includes('leaves') || mname.includes('foliage');
+              if (isLeaf) {
+                changed = true;
+                const mat = new THREE.MeshStandardMaterial({color, roughness: 1, metalness: 0});
+                mat.side = THREE.DoubleSide;
+                return mat;
+              }
+              return m;
+            });
+            if (Array.isArray(o.material)) {
+              if (changed) o.material = replaced;
+            } else if (changed) {
+              o.material = replaced[0];
+            }
+          });
+        }
+      });
+
+      // ---------- Populate scene with Tree.obj instances ----------
+      const scene = document.querySelector('a-scene');
+      const trees = document.createElement('a-entity');
+      trees.setAttribute('id', 'trees');
+      scene.appendChild(trees);
+      for (let i = 0; i < 500; i++) {
+        const x = (Math.random() - 0.5) * 80;
+        const z = (Math.random() - 0.5) * 80;
+        const targetH = 4 + Math.random() * 4; // 4–8m tall trees
+        const rotY = Math.floor(Math.random() * 360);
+
+        const tree = document.createElement('a-entity');
+        tree.setAttribute('position', `${x} 0 ${z}`);
+        tree.setAttribute('rotation', `0 ${rotY} 0`);
+        tree.setAttribute('obj-model', 'obj: #treeObj');
+        tree.setAttribute('material', 'src: #barkTex; roughness: 1; metalness: 0');
+        tree.setAttribute('leaf-color', 'color: #0a3a0a');
+        tree.setAttribute('fit-to-height', targetH);
+        tree.setAttribute('shadow', 'cast: true; receive: true');
+        trees.appendChild(tree);
+      }
+
+      // ---------- Day → Night Transition ----------
+      const sky = document.querySelector('#sky');
+      const sun = document.querySelector('#sun');
+      const ambient = document.querySelector('#ambient');
+
+      let progress = 0; // 0 = day, 1 = night
+      const day = {
+        sky: new THREE.Color('#b3d9ff'),
+        sunColor: new THREE.Color('#ffcc88'),
+        sunIntensity: 1,
+        ambientIntensity: 0.6,
+        fogColor: new THREE.Color('#cfdfff'),
+        fogNear: 1,
+        fogFar: 25
+      };
+      const night = {
+        sky: new THREE.Color('#050505'),
+        sunColor: new THREE.Color('#4455ff'),
+        sunIntensity: 0.05,
+        ambientIntensity: 0.15,
+        fogColor: new THREE.Color('#0a0a0a'),
+        fogNear: 0.5,
+        fogFar: 12
+      };
+
+      function lerpColor(a, b, t) { return a.clone().lerp(b, t); }
+
+      function updateEnvironment() {
+        progress += 0.002; // speed up transition (~50s total)
+        if (progress > 1) progress = 1;
+
+        const cSky = lerpColor(day.sky, night.sky, progress);
+        const cSun = lerpColor(day.sunColor, night.sunColor, progress);
+        const cFog = lerpColor(day.fogColor, night.fogColor, progress);
+
+        sky.setAttribute('color', '#' + cSky.getHexString());
+        sun.setAttribute('light', `type: directional; color: #${cSun.getHexString()}; intensity: ${THREE.MathUtils.lerp(day.sunIntensity, night.sunIntensity, progress)}`);
+        ambient.setAttribute('light', `type: ambient; color: #ffffff; intensity: ${THREE.MathUtils.lerp(day.ambientIntensity, night.ambientIntensity, progress)}`);
+        scene.setAttribute('fog', `type: linear; color: #${cFog.getHexString()}; near: ${THREE.MathUtils.lerp(day.fogNear, night.fogNear, progress)}; far: ${THREE.MathUtils.lerp(day.fogFar, night.fogFar, progress)}`);
+      }
+
+      setInterval(updateEnvironment, 100);
     </script>
   </body>
 </html>
